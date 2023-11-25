@@ -24,5 +24,19 @@ const db = mysql.createConnection(
 
 // TO DO: prompt that asks a bunch of questions
 //----------------MODULARIZE THE ADD STATEMENTS TBH
+function menu() {
+    inquirer.prompt([
+        {
+            type:'list',
+            message: 'Welcome to your Employee Database. What would you like to do?',
+            choices:['View All Departments', 'View All Roles', 'View All Employees', 'Add a Department', 'Add a Role', 'Add an Employee', 'Update an Employee Role'],
+            name: 'options'
+        }
+    ]).then((answer) => {
+        
+    })
+}
 
 //TO DO: 
+
+menu()
