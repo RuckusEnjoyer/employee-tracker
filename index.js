@@ -1,9 +1,6 @@
 //requiring in
 const inquirer = require('inquirer');
 const mysql = require('mysql2');
-// const Db = require('mysql2-async').default
-
-// const { addaDep, addaRole, addAnEmp } = require('./lib/adds.js')
 
 
 //connect to the mysql database
@@ -30,8 +27,8 @@ const db = mysql.createConnection(
       }
     });
   }
-// TO DO: prompt that asks a bunch of questions
-//----------------MODULARIZE THE ADD STATEMENTS TBH
+
+  //THE INITIAL MENU FUNCTION!!!!
 function menu() {
     inquirer.prompt([
         {
@@ -80,7 +77,7 @@ function menu() {
     })
 }
 
-
+//STARTS THE FILE!
 menu()
 
 //Adds a Department using inquirer and promises!!
@@ -153,8 +150,9 @@ function addaRole() {
   }
 
 
-//function to add an employee:
+//ADDS AN EMPLOYEE
 function addAnEmp() {
+    //promises that grabs the roles and all the employees to be used in the prompt!
     const rolesPromise = new Promise((resolve, reject) => {
       db.query('SELECT * FROM role', (error, results) => {
         if (error) {
@@ -175,6 +173,7 @@ function addAnEmp() {
       });
     });
   
+    //makes sure everything is paused until managerPromise and rolesPromise are finished!
     Promise.all([rolesPromise, managerPromise]).then(([roles, employees]) => {
   
       inquirer
@@ -204,13 +203,18 @@ function addAnEmp() {
         ])
         .then((answer) => {
             const { empFirstName, empLastName, empRole, empManager } = answer;
+            //CONVERTS THE MANAGER NAME TO THEIR EMPLOYEE ID FOR USE IN DB
             convertNameToId(empManager, employees)
               .then((managerId) => {
+                //CONVERTS THE ROLE NAME TO THE ROLE'S ID FOR USE IN DB
                 convertNameToId(empRole, roles)
                   .then((roleId) => {
+
                     const query =
                       'INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES (?, ?, ?, ?)';
                     const values = [empFirstName, empLastName, roleId, managerId];
+
+                    //THE DB QUERY TO ADD TO DATABASE!
                     db.query(query, values, (error, results) => {
                       if (error) {
                         console.error(error);
@@ -219,6 +223,7 @@ function addAnEmp() {
                       }
                       menu();
                     });
+
                   })
                   .catch((error) => {
                     console.error(error);
@@ -234,6 +239,86 @@ function addAnEmp() {
       });
   }
 
+  //UPDATES EMPLOYEES
   function updateEmp() {
+    //grabs all employees from the employee database
+    const grabEmployees = new Promise((resolve, reject) => {
+        db.query('SELECT * FROM employee', (error, results) => {
+          if (error) {
+            reject(error);
+          } else {
+            resolve(results);
+          }
+        });
+      });
+    //makes everything else in this function wait until the grabEmployees function is done!
+      Promise.all(grabEmployees).then((employees) => {
+        inquirer.prompt([
+            {
+                type: 'list',
+                message: 'Which employee would you like to update?',
+                choices: employees.map((employee) => `${employee.first_name} ${employee.last_name}`),
+                name: 'empName'
+            },
+            {
+                type: 'list',
+                message: 'What would you like to update about this employee?',
+                choices: ['First Name', 'Last Name', 'Role', 'Manager'],
+                name: 'updater'
+            },
+            {
+                type: 'input',
+                message: 'What will the updated term be?',
+                name: 'newInput'
+            }
+        ]).then((answers) => {
 
+            switch (answers.updater){
+                case 'First Name':
+
+                break;
+                case 'Last Name':
+
+                break;
+                case 'Role':
+
+                break;
+                case 'Manager':
+                    
+                    break;
+                default:
+                    console.log('You must choose something to update!')
+                    break;
+            }
+
+            const { empName, updater, newInput} = answers;
+
+            
+
+            convertNameToId(empRole, roles)
+                  .then((roleId) => {
+                    
+                    const query =
+                      'INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES (?, ?, ?, ?)';
+                    const values = [empName, empLastName, roleId, managerId];
+
+                    //THE DB QUERY TO ADD TO DATABASE!
+                    db.query(query, values, (error, results) => {
+                      if (error) {
+                        console.error(error);
+                      } else {
+                        console.log('Data inserted successfully');
+                      }
+                      menu();
+                    });
+
+                  })
+                  .catch((error) => {
+                    console.error(error);
+                  });
+              })
+              .catch((error) => {
+                console.error(error);
+              });
+  })
   }

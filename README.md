@@ -22,6 +22,9 @@ The user can install this app by cloning the repo to your computer.
     
 In order to use this application, you can open the index.js in the terminal and run node index. You will get a menu of options to choose from.
 
+[Video Link]()
+[![A video of how to use the application.](./images/Capture.PNG)](https://drive.google.com/file/d/17X7S2rnTqk9LciCWsEadVQuZXFpenbrE/view "How to Use")
+
 ## License
 
 This project is covered under the MIT license. For more information, visit the link below.
