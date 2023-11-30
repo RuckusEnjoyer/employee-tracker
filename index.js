@@ -19,9 +19,17 @@ const db = mysql.createConnection(
     console.log(`Connected to the business_db database.`)
   );
 
-
-
-
+  //This grabs first names and finds the ID of the employee/manager!
+  function convertNameToId(name, data) {
+    return new Promise((resolve, reject) => {
+      const item = data.find((item) => item.title === name || `${item.first_name} ${item.last_name}` === name);
+      if (item) {
+        resolve(item.id);
+      } else {
+        reject(new Error(`No matching ID found for ${name}`));
+      }
+    });
+  }
 // TO DO: prompt that asks a bunch of questions
 //----------------MODULARIZE THE ADD STATEMENTS TBH
 function menu() {
@@ -96,75 +104,136 @@ function addaDep() {
 
 //Adds a role using inquirer and functions!!
 function addaRole() {
-    //storing all departments in a variable for choices later!
-    let departments = db.promise().query('SELECT * FROM department');
-    // departments = departments.map((department) => department.name);
-
-    inquirer.prompt([
-        {
+    const departmentsPromise = new Promise((resolve, reject) => {
+      db.query('SELECT * FROM department', (error, results) => {
+        if (error) {
+          reject(error);
+        } else {
+          resolve(results);
+        }
+      });
+    });
+  
+    departmentsPromise.then((departments) => {
+      inquirer
+        .prompt([
+          {
             type: 'input',
             message: 'What should the new role name be?',
-            name: 'roleName'
-        },
-        {
+            name: 'roleName',
+          },
+          {
             type: 'input',
             message: "What is the new role's salary?",
-            name: 'roleSal'
-        },
-        {
+            name: 'roleSal',
+          },
+          {
             type: 'list',
-            message: "What department does this role fall under?",
-            choices: departments,
-            name: "roleDep"
-        }
-    ]).then((answer) => {
-        db.query(`INSERT INTO role (name) VALUES (?)`, answer.roleName, (error, results) => {
-            if (error) {
-              console.error(error);
-            } else {
-              console.log('Data inserted successfully');
-            }})
-        menu()
-            
-        
-  })
-};
+            message: 'What department does this role fall under?',
+            choices: departments.map((department) => department.name),
+            name: 'roleDep',
+          },
+        ])
+        .then((answer) => {
+          const { roleName, roleSal, roleDep } = answer;
+          db.query(
+            'INSERT INTO role (title, salary, department_id) VALUES (?, ?, ?)',
+            [roleName, roleSal, departments.find((department) => department.name === roleDep).id],
+            (error, results) => {
+              if (error) {
+                console.error(error);
+              } else {
+                console.log('Data inserted successfully');
+              }
+              menu();
+            }
+          );
+        });
+    });
+  }
 
 
 //function to add an employee:
 function addAnEmp() {
-    inquirer.prompt([
-        {
+    const rolesPromise = new Promise((resolve, reject) => {
+      db.query('SELECT * FROM role', (error, results) => {
+        if (error) {
+          reject(error);
+        } else {
+          resolve(results);
+        }
+      });
+    });
+  
+    const managerPromise = new Promise((resolve, reject) => {
+      db.query('SELECT * FROM employee', (error, results) => {
+        if (error) {
+          reject(error);
+        } else {
+          resolve(results);
+        }
+      });
+    });
+  
+    Promise.all([rolesPromise, managerPromise]).then(([roles, employees]) => {
+  
+      inquirer
+        .prompt([
+          {
             type: 'input',
             message: 'What is the first name of the employee?',
-            name: 'empFirstName'
-        },
-        {
+            name: 'empFirstName',
+          },
+          {
             type: 'input',
             message: 'What is the last name of the employee?',
-            name: 'empLastName'
-        },
-        {
+            name: 'empLastName',
+          },
+          {
             type: 'list',
             message: 'What role will this employee have?',
-            choices: [],
-            name: "empRole"
-        },
-        {
-            type: "list",
+            choices: roles.map((role) => role.title),
+            name: 'empRole',
+          },
+          {
+            type: 'list',
             message: "Who is this employee's manager?",
-            choices: [],
-            name: "empManager"
-        }
-    ]).then((answer) => {
-        const query = 'INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES (?, ?, ?, ?)'
-        const values = [answer.empFirstName, answer.empLastName, answer.empRole, answer.empManager]
-        db.query(query, values, (error, results) => {
-            if (error) {
-              console.error(error);
-            } else {
-              console.log('Data inserted successfully');
-            }})
-        menu()
-  })
-};
+            choices: employees.map((employee) => `${employee.first_name} ${employee.last_name}`),
+            name: 'empManager',
+          },
+        ])
+        .then((answer) => {
+            const { empFirstName, empLastName, empRole, empManager } = answer;
+            convertNameToId(empManager, employees)
+              .then((managerId) => {
+                convertNameToId(empRole, roles)
+                  .then((roleId) => {
+                    const query =
+                      'INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES (?, ?, ?, ?)';
+                    const values = [empFirstName, empLastName, roleId, managerId];
+                    db.query(query, values, (error, results) => {
+                      if (error) {
+                        console.error(error);
+                      } else {
+                        console.log('Data inserted successfully');
+                      }
+                      menu();
+                    });
+                  })
+                  .catch((error) => {
+                    console.error(error);
+                  });
+              })
+              .catch((error) => {
+                console.error(error);
+              });
+          })
+          .catch((error) => {
+            console.error(error);
+          });
+      });
+  }
+
+  function updateEmp() {
+
+  }
