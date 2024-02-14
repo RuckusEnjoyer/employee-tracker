@@ -23,7 +23,7 @@ The user can install this app by cloning the repo to your computer.
 In order to use this application, you can open the index.js in the terminal and run node index. You will get a menu of options to choose from.
 
 [Video Link]()
-[![A video of how to use the application.](./images/Capture.PNG)](https://drive.google.com/file/d/17X7S2rnTqk9LciCWsEadVQuZXFpenbrE/view "How to Use")
+[![A video of how to use the application.](./images/Capture.PNG)](https://app.screencastify.com/v3/watch/y9F1OsraVw2olcsPo9re "How to Use")
 
 ## License
 

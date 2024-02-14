@@ -240,85 +240,60 @@ function addAnEmp() {
   }
 
   //UPDATES EMPLOYEES
-  function updateEmp() {
-    //grabs all employees from the employee database
-    const grabEmployees = new Promise((resolve, reject) => {
-        db.query('SELECT * FROM employee', (error, results) => {
-          if (error) {
-            reject(error);
-          } else {
-            resolve(results);
-          }
-        });
+function updateEmp() {
+  //grabs all employees from the employee database
+  db.query('SELECT * FROM employee', (error, employees) => {
+    if (error) {
+      console.error(error);
+      return;
+    }
+
+    inquirer.prompt([
+      {
+        type: 'list',
+        message: 'Which employee would you like to update?',
+        choices: employees.map((employee) => ({ name: `${employee.first_name} ${employee.last_name}`, value: employee.id })),
+        name: 'empId'
+      },
+      {
+        type: 'list',
+        message: 'What would you like to update about this employee?',
+        choices: ['First Name', 'Last Name', 'Role', 'Manager'],
+        name: 'updater'
+      },
+      {
+        type: 'input',
+        message: 'What will the updated term be?',
+        name: 'newInput'
+      }
+    ]).then((answers) => {
+      let query;
+      switch (answers.updater) {
+        case 'First Name':
+          query = 'UPDATE employee SET first_name = ? WHERE id = ?';
+          break;
+        case 'Last Name':
+          query = 'UPDATE employee SET last_name = ? WHERE id = ?';
+          break;
+        case 'Role':
+          query = 'UPDATE employee SET role_id = ? WHERE id = ?';
+          break;
+        case 'Manager':
+          query = 'UPDATE employee SET manager_id = ? WHERE id = ?';
+          break;
+        default:
+          console.log('You must choose something to update!');
+          return;
+      }
+
+      db.query(query, [answers.newInput, answers.empId], (error, results) => {
+        if (error) {
+          console.error(error);
+        } else {
+          console.log('Data updated successfully');
+        }
+        menu();
       });
-    //makes everything else in this function wait until the grabEmployees function is done!
-      Promise.all(grabEmployees).then((employees) => {
-        inquirer.prompt([
-            {
-                type: 'list',
-                message: 'Which employee would you like to update?',
-                choices: employees.map((employee) => `${employee.first_name} ${employee.last_name}`),
-                name: 'empName'
-            },
-            {
-                type: 'list',
-                message: 'What would you like to update about this employee?',
-                choices: ['First Name', 'Last Name', 'Role', 'Manager'],
-                name: 'updater'
-            },
-            {
-                type: 'input',
-                message: 'What will the updated term be?',
-                name: 'newInput'
-            }
-        ]).then((answers) => {
-
-            switch (answers.updater){
-                case 'First Name':
-
-                break;
-                case 'Last Name':
-
-                break;
-                case 'Role':
-
-                break;
-                case 'Manager':
-                    
-                    break;
-                default:
-                    console.log('You must choose something to update!')
-                    break;
-            }
-
-            const { empName, updater, newInput} = answers;
-
-            
-
-            convertNameToId(empRole, roles)
-                  .then((roleId) => {
-                    
-                    const query =
-                      'INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES (?, ?, ?, ?)';
-                    const values = [empName, empLastName, roleId, managerId];
-
-                    //THE DB QUERY TO ADD TO DATABASE!
-                    db.query(query, values, (error, results) => {
-                      if (error) {
-                        console.error(error);
-                      } else {
-                        console.log('Data inserted successfully');
-                      }
-                      menu();
-                    });
-
-                  })
-                  .catch((error) => {
-                    console.error(error);
-                  });
-              })
-              .catch((error) => {
-                console.error(error);
-              });
-  })
-  }
+    });
+  });
+}
